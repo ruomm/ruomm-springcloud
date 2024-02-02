@@ -24,12 +24,3 @@ spring:
 ruomm:
   # 日志输出路径
   logPath: "../app_logs/authentication-server/${spring.profiles.active}_logs"
-  bing:
-    # 必应壁纸API路径
-    apiUrl: https://cn.bing.com/
-    # 必应壁纸下载路径
-    downloadDir: "../opt/app_datas/authentication-server/bingwallpaper"
-    # 命名方式按照开始日期还是结束日期 0.开始日期 1.开始日期下一天 2.结束日期 其他.开始日期
-    renameMode: 1
-  http:
-    loglevel: INFO

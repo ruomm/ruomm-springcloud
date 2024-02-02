@@ -1,3 +1,8 @@
+#指定端口和路径
+server:
+  port: 8099
+  servlet:
+    context-path: /auth
 #spring配置
 spring:
   profiles:
@@ -87,3 +92,26 @@ mapper:
   mappers: tk.mybatis.mapper.common.Mapper
   #通用mapper数据库类型定义，如MYSQL、ORCALE等
   identity: MYSQL
+ruomm:
+  # 日志输出路径
+  logPath: "../app_logs/authentication-server/${spring.profiles.active}_logs"
+  # http请求参数配置
+  httpConfig:
+    # http请求日志级别
+    logLevel: INFO
+  # 应用名称
+  appName: 明月阁
+  # 短信验证码配置
+  verifyCodeConfig:
+    # 验证码所属应用名称
+    appName: 明月阁
+    # 验证码有效期(单位秒)
+    validTime: 900
+    # 验证码再次发送间隔(单位秒)
+    validSkip: 120
+    # 同一设备，验证码一天发送的次数限制
+    limitByTerm: 10
+    # 同一用户，验证码一天发送的次数限制
+    limitByUser: 10
+    # 同一发送目标，验证码一天发送的次数限制
+    limitByToAddress: 10

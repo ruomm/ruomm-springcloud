@@ -27,7 +27,7 @@ public class MessageSendReq {
     private String msgType;
     @Length(max = 64,message = "信息送达地址不能超过64个字符")
     private String msgToAddress;
-    @Length(max = 1024, message = "信息关联目标地址不能超过64个字符")
+    @Length(max = 64, message = "信息关联目标地址不能超过64个字符")
     private String msgBindAddress;
     // template模板参数对应的键值对列表
     private Map<String,String> contentMap;
