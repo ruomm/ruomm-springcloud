@@ -1,19 +1,23 @@
 package com.ruomm.springcloud.authserver.entry;
 
-import java.util.Date;
-import javax.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.util.Date;
 
 /**
  * tableName：tbl_msg_template
  * tableRemarks：信息模板表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-02 18:51
+ * @create 2024-02-02 21:28
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-02 18:51:30
+ * @mbg.generated do_not_delete_during_merge 2024-02-02 21:28:43
  */
 @Entity
 @Getter
@@ -30,14 +34,14 @@ public class MsgTemplateEntity {
     private Long id;
 
     /**
-     * column: tbl_msg_template.bind_id, datatype: BIGINT, length: 19, nullable: true
+     * column: tbl_msg_template.bind_id, datatype: VARCHAR, length: 64, nullable: true
      * remark: 关联主键ID。如是有关联主键ID，则短信发送前需要检查前一条关联短信是否验证通过。
      */
     @Column( name = "bind_id" )
-    private Long bindId;
+    private String bindId;
 
     /**
-     * column: tbl_msg_template.template, datatype: VARCHAR, length: 16, nullable: false
+     * column: tbl_msg_template.template, datatype: VARCHAR, length: 1024, nullable: false
      * remark: 短信模板。按照短信模板填充短信内容，通用替换字段：${verifycode},${year},${month},${day},${time},${datetime},${userId},${userName}
      */
     @Column( name = "template" )
@@ -51,11 +55,11 @@ public class MsgTemplateEntity {
     private Integer authType;
 
     /**
-     * column: tbl_msg_template.auth_uri, datatype: INTEGER, length: 10, nullable: true
+     * column: tbl_msg_template.auth_uri, datatype: VARCHAR, length: 64, nullable: true
      * remark: 短信授权URI。URI为空则是通用短信，不为空则是特定URI用途的短信。
      */
     @Column( name = "auth_uri" )
-    private Integer authUri;
+    private String authUri;
 
     /**
      * column: tbl_msg_template.valid_time, datatype: INTEGER, length: 10, nullable: true
