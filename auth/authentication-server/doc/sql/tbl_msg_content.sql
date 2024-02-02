@@ -20,19 +20,21 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 -- Table structure for tbl_message
 -- ----------------------------
-CREATE TABLE `tbl_messages` (
+CREATE TABLE `tbl_msg_content` (
   `id` bigint(0) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `user_id` bigint(0) NOT NULL COMMENT '用户ID',
-  `msg_function_id` bigint(0) NOT NULL COMMENT '功能，不同功能需要不同的权限',
+  `alias_id` varchar(64) NOT NULL COMMENT '主键别名。需要返回短信ID时候，建议返回别名ID',
+  `template_id` bigint(0) NOT NULL COMMENT '信息模板ID',
+  `user_id` bigint(0) NULL DEFAULT NULL COMMENT '用户ID',
   `msg_type` varchar(16) NOT NULL COMMENT '信息类型，mobile、email、weixin、qq等',
-  `msg_dest` varchar(64) NULL DEFAULT NULL COMMENT '目标，修改验证手段时候需要。',
+  `msg_to_address` varchar(64) NOT NULL COMMENT '信息送达地址，没有user_id时候必须填写',
+  `msg_bind_address` varchar(64) NULL DEFAULT NULL COMMENT '信息关联目标地址。如修改手机号，填写待修改的手机号',
   `msg_content` varchar(1024) NOT NULL COMMENT '信息内容',
-  `verify_code` varchar(16) NULL DEFAULT NULL COMMENT '验证码。',
-  `valid_time` int(0) NULL DEFAULT NULL COMMENT '验证码的有效期啊',
-  `msg_status` int(0) NOT NULL COMMENT '验证码的状态。1.发送成功；2.验证成功 3.验证失败 9.失效',
+  `verify_code` varchar(16) NULL DEFAULT NULL COMMENT '验证码',
+  `valid_time` int(0) NULL DEFAULT NULL COMMENT '验证码有效期，单位秒',
+  `status` int(0) NOT NULL COMMENT '状态。1.发送成功；2.验证成功；3.验证失败；9.失效',
   `version` int(0) NOT NULL COMMENT '乐观锁',
   `created_at` timestamp(6) NOT NULL COMMENT '创建时间',
   `updated_at` timestamp(6) NOT NULL COMMENT '更新时间',
   `deleted_at` timestamp(6) NULL DEFAULT NULL COMMENT '删除时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB COMMENT '信息表';
+) ENGINE = InnoDB COMMENT '信息内容表';

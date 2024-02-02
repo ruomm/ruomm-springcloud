@@ -1,6 +1,6 @@
 package com.ruomm.springcloud.authserver.dao;
 
-import com.ruomm.springcloud.authserver.entry.MessageEntity;
+import com.ruomm.springcloud.authserver.entry.MsgTemplateEntity;
 import org.springframework.stereotype.Repository;
 import tk.mybatis.mapper.common.Mapper;
 
@@ -11,5 +11,5 @@ import tk.mybatis.mapper.common.Mapper;
  * @create 2024/1/30 0:16
  */
 @Repository
-public interface MessageMapper extends Mapper<MessageEntity> {
+public interface MsgTemplateMapper extends Mapper<MsgTemplateEntity> {
 }

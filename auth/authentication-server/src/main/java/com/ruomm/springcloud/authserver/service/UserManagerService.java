@@ -34,7 +34,7 @@ public class UserManagerService {
         userEntity.setPasswordSlat(password_slat);
         userEntity.setUserType(1);
         userEntity.setRoleId(0l);
-        userEntity.setUserStatus(0);
+        userEntity.setStatus(0);
         userEntity.setVersion(0);
         Date dateNow = new Date();
         userEntity.setCreatedAt(dateNow);

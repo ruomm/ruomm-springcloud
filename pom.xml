@@ -77,7 +77,7 @@
 			</dependency>
 			<dependency>
 				<groupId>com.ruomm.javax</groupId>
-				<artifactId>javax_encryptx_bc15</artifactId>
+				<artifactId>javax_encryptx_bc18</artifactId>
 				<version>${ruommjavax.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
@@ -118,6 +118,14 @@
 				<scope>import</scope>
 			</dependency>
 			<!-- 牛牛通用Jar包结束 -->
+			<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on -->
+			<dependency>
+				<groupId>org.bouncycastle</groupId>
+				<artifactId>bcprov-jdk18on</artifactId>
+				<version>1.77</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<!-- mybatis集成 -->
 			<!-- https://mvnrepository.com/artifact/org.mybatis.spring.boot/mybatis-spring-boot-starter -->
 			<dependency>

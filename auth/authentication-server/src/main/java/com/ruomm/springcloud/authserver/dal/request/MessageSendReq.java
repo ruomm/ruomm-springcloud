@@ -8,6 +8,8 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
 
+import java.util.Map;
+
 /**
  * @author 牛牛-研发部-www.ruomm.com
  * @version 1.0
@@ -18,14 +20,16 @@ import org.hibernate.validator.constraints.Length;
 @Setter
 @ToString
 public class MessageSendReq {
-    @NotNull(message = "验证码功能ID不能为空，且必须为正整数")
-    @Min(value = 1, message = "验证码功能ID不能为空，且必须为正整数")
-    private Long msgFunctionId;
+    @NotNull(message = "信息模板ID不能为空，且必须为正整数")
+    @Min(value = 1, message = "信息模板ID不能为空，且必须为正整数")
+    private Long templateId;
     @CheckAllowStr(allowStr = "mobile,email,weixin,qq", message = "信息类型必须是mobile,email,weixin,qq中的一个")
     private String msgType;
-    @Length(max = 1024, message = "发送目标长度不能超过64个字符")
-    private String msgDest;
-    @Length(max = 1024, message = "信息内容长度不能超过1024字符")
-    private String msgContent;
+    @Length(max = 64,message = "信息送达地址不能超过64个字符")
+    private String msgToAddress;
+    @Length(max = 1024, message = "信息关联目标地址不能超过64个字符")
+    private String msgBindAddress;
+    // template模板参数对应的键值对列表
+    private Map<String,String> contentMap;
 
 }
