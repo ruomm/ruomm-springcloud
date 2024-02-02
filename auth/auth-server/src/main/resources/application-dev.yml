@@ -1,0 +1,35 @@
+#指定端口和路径
+server:
+  port: 8099
+#spring配置
+spring:
+  datasource:
+    # 数据库相关配置
+    url: jdbc:mysql://www.ruomm.com:3306/ruommdb?characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ruomm
+    password: xiaoniu123456
+    druid:
+      # 配置后台监控
+      stat-view-servlet:
+        # 允许访问的地址，这里因为是本地所以配置当前机器
+        allow: 127.0.0.1,10.0.0.0/16,192.168.0.0/16
+        # 禁止访问的地址
+        deny: 172.160.0.0/24
+        # 是否开启访问
+        enabled: true
+        # 管理页面登陆的用户名
+        login-username: idr
+        # 管理页面登陆的密码
+        login-password: idr123456
+ruomm:
+  # 日志输出路径
+  logPath: "../app_logs/authentication-server/${spring.profiles.active}_logs"
+  bing:
+    # 必应壁纸API路径
+    apiUrl: https://cn.bing.com/
+    # 必应壁纸下载路径
+    downloadDir: "../opt/app_datas/authentication-server/bingwallpaper"
+    # 命名方式按照开始日期还是结束日期 0.开始日期 1.开始日期下一天 2.结束日期 其他.开始日期
+    renameMode: 1
+  http:
+    loglevel: INFO

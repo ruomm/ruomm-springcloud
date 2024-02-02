@@ -1,0 +1,71 @@
+#spring配置
+spring:
+  profiles:
+    active: @profiles.active@
+  datasource:
+    # 数据库相关配置
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    #url: jdbc:mysql://www.ruomm.com:3306/idr?characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
+    #username: idr
+    #password: idr123456
+    druid:
+      # 初始化连接数量
+      initial-size: 5
+      # 最小线连接数量
+      min-idle: 5
+      # 最大连接数量
+      max-active: 100
+      # 获取连接时最大等待时间，单位毫秒
+      max-wait: 60000
+      # --:空闲资源的检测周期（单位为毫秒）。
+      time-between-eviction-runs-millis: 60000
+      #销毁线程时检测当前连接的最后活动时间和当前时间差大于该值时，关闭当前连接
+      min-evictable-idle-time-millis: 30000
+      #用来检测连接是否有效的sql 必须是一个查询语句
+      #mysql中为 select 'x'，--:也可以设置：SELECT 1 FROM DUAL
+      #oracle中为 select 1 from dual
+      validation-query: select 'x'
+      # --:单位：秒，检测连接是否有效的超时时间。底层调用jdbc Statement对象的void setQueryTimeout(int seconds)方法，默认：-1
+      #validation-query-timeout: -1
+      # --:建议配置为true，不影响性能，并且保证安全性。申请连接的时候检测，如果空闲时间大于timeBetweenEvictionRunsMillis，执行validationQuery检测连接是否有效。默认：true
+      test-while-idle: true
+      #申请连接时执行validationQuery检测连接是否有效，这个配置会降低性能。默认：false(如果test-on-borrow为true,那么test-while-idle无效)
+      test-on-borrow: false
+      #归还连接时执行validationQuery检测连接是否有效，做了这个配置会降低性能。默认：false
+      test-on-return: false
+      # --:线程池打开PSCache
+      pool-prepared-statements: true
+      # --:指定最大打开PSCache的连接数量
+      max-open-prepared-statements: 50
+      # --:指定每个连接上的PSCache大小
+      max-pool-prepared-statement-per-connection-size: 20
+      # --:合并多个DruidDataSource的监控数据
+      use-global-data-source-stat: true
+      # --:通过connectProperties属性来打开mergeSql功能；慢SQL记录
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+      # 配置监拉统计挡成的filters. stat: 监控统计、Log4j:日志记录、slf4j:日志输出，waLL: 防御sqL注入，todo log4j2,config
+      filters: stat,wall,slf4j,config
+      # 配置后台监控
+      stat-view-servlet:
+        # 允许访问的地址，这里因为是本地所以配置当前机器
+        allow: 127.0.0.1,10.0.0.0/16,192.168.0.0/16
+        # 禁止访问的地址
+        deny: 172.160.0.0/24
+        # 是否开启访问
+        enabled: true
+        # 是否能够重置数据
+        reset-enable: false
+        # 管理页面登陆的用户名
+        login-username: idr
+        # 管理页面登陆的密码
+        login-password: idr123456
+  jpa:
+    database: MYSQL
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.MySQL8Dialect
