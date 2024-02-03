@@ -18,4 +18,6 @@ public class AppConfig {
     public final static String DATE_PATTERN_SECOND_NOSPACE = "yyyyMMddHHmmss";
     public final static String DATE_PATTERN_MILLI_SECOND = "yyyy-MM-dd HH:mm:ss.SSS";
     public final static String DATE_PATTERN_MILLI_SECOND_NOSPACE = "yyyyMMddHHmmssSSS";
+    public final static int DB_STATUS_OK = 1;
+
 }

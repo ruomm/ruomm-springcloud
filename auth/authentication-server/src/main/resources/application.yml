@@ -107,11 +107,11 @@ ruomm:
     appName: 明月阁
     # 验证码有效期(单位秒)
     validTime: 900
-    # 验证码再次发送间隔(单位秒)
-    validSkip: 120
-    # 同一设备，验证码一天发送的次数限制
+    # 再次发送间隔(单位秒)
+    repeatSkipTime: 120
+    #  同一设备，一天发送的次数限制
     limitByTerm: 10
-    # 同一用户，验证码一天发送的次数限制
+    # 同一用户，一天发送的次数限制
     limitByUser: 10
-    # 同一发送目标，验证码一天发送的次数限制
-    limitByToAddress: 10
+    # 同一发送目标，一天发送的次数限制
+    limitByAddr: 10

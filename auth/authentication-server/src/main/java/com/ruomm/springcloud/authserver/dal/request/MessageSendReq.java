@@ -1,5 +1,6 @@
 package com.ruomm.springcloud.authserver.dal.request;
 
+import com.ruomm.springcloud.authserver.dal.request.sub.ReqKeyValuePair;
 import com.ruomm.webx.validatorx.validator.CheckAllowStr;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -8,7 +9,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * @author 牛牛-研发部-www.ruomm.com
@@ -26,10 +27,10 @@ public class MessageSendReq {
     @CheckAllowStr(allowStr = "mobile,email,weixin,qq", message = "信息类型必须是mobile,email,weixin,qq中的一个")
     private String msgType;
     @Length(max = 64,message = "信息送达地址不能超过64个字符")
-    private String msgToAddress;
+    private String msgAddr;
     @Length(max = 64, message = "信息关联目标地址不能超过64个字符")
-    private String msgBindAddress;
+    private String msgBindAddr;
     // template模板参数对应的键值对列表
-    private Map<String,String> contentMap;
+    private List<ReqKeyValuePair> msgPairs;
 
 }

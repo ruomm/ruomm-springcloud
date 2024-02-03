@@ -15,9 +15,9 @@ import java.util.Date;
  * tableRemarks：信息模板表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-02 21:28
+ * @create 2024-02-03 00:07
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-02 21:28:43
+ * @mbg.generated do_not_delete_during_merge 2024-02-03 00:07:49
  */
 @Entity
 @Getter
@@ -49,7 +49,7 @@ public class MsgTemplateEntity {
 
     /**
      * column: tbl_msg_template.auth_type, datatype: INTEGER, length: 10, nullable: false
-     * remark: 短信发送授权控制。0.不需要授权；1.需要授权；2.可授权可不授权
+     * remark: 短信发送授权控制。0.不需要授权；1.需要授权；2.需要授权并且是账户绑定的通讯方式；3.账户异常解冻，需要是账户绑定的通讯方式
      */
     @Column( name = "auth_type" )
     private Integer authType;
@@ -63,10 +63,38 @@ public class MsgTemplateEntity {
 
     /**
      * column: tbl_msg_template.valid_time, datatype: INTEGER, length: 10, nullable: true
-     * remark: 验证码有效期，单位秒
+     * remark: 验证码有效期(单位秒)
      */
     @Column( name = "valid_time" )
     private Integer validTime;
+
+    /**
+     * column: tbl_msg_template.repeat_skip_time, datatype: INTEGER, length: 10, nullable: true
+     * remark: 再次发送间隔(单位秒)
+     */
+    @Column( name = "repeat_skip_time" )
+    private Integer repeatSkipTime;
+
+    /**
+     * column: tbl_msg_template.limit_by_term, datatype: INTEGER, length: 10, nullable: true
+     * remark: 同一设备，一天发送的次数限制
+     */
+    @Column( name = "limit_by_term" )
+    private Integer limitByTerm;
+
+    /**
+     * column: tbl_msg_template.limit_by_user, datatype: INTEGER, length: 10, nullable: true
+     * remark: 同一用户，一天发送的次数限制
+     */
+    @Column( name = "limit_by_user" )
+    private Integer limitByUser;
+
+    /**
+     * column: tbl_msg_template.limit_by_addr, datatype: INTEGER, length: 10, nullable: true
+     * remark: 同一发送目标，一天发送的次数限制
+     */
+    @Column( name = "limit_by_addr" )
+    private Integer limitByAddr;
 
     /**
      * column: tbl_msg_template.status, datatype: INTEGER, length: 10, nullable: false

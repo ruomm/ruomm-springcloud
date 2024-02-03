@@ -15,9 +15,9 @@ import java.util.Date;
  * tableRemarks：信息内容表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-02 18:51
+ * @create 2024-02-03 00:07
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-02 18:51:30
+ * @mbg.generated do_not_delete_during_merge 2024-02-03 00:07:49
  */
 @Entity
 @Getter
@@ -62,18 +62,18 @@ public class MsgContentEntity {
     private String msgType;
 
     /**
-     * column: tbl_msg_content.msg_to_address, datatype: VARCHAR, length: 64, nullable: false
+     * column: tbl_msg_content.msg_addr, datatype: VARCHAR, length: 64, nullable: false
      * remark: 信息送达地址，没有user_id时候必须填写
      */
-    @Column( name = "msg_to_address" )
-    private String msgToAddress;
+    @Column( name = "msg_addr" )
+    private String msgAddr;
 
     /**
-     * column: tbl_msg_content.msg_bind_address, datatype: VARCHAR, length: 64, nullable: true
+     * column: tbl_msg_content.msg_bind_addr, datatype: VARCHAR, length: 64, nullable: true
      * remark: 信息关联目标地址。如修改手机号，填写待修改的手机号
      */
-    @Column( name = "msg_bind_address" )
-    private String msgBindAddress;
+    @Column( name = "msg_bind_addr" )
+    private String msgBindAddr;
 
     /**
      * column: tbl_msg_content.msg_content, datatype: VARCHAR, length: 1024, nullable: false
@@ -91,7 +91,7 @@ public class MsgContentEntity {
 
     /**
      * column: tbl_msg_content.valid_time, datatype: INTEGER, length: 10, nullable: true
-     * remark: 验证码有效期，单位秒
+     * remark: 验证码有效期(单位秒)
      */
     @Column( name = "valid_time" )
     private Integer validTime;
