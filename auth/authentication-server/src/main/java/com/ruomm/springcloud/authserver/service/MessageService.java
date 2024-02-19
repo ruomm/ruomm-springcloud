@@ -1,6 +1,7 @@
 package com.ruomm.springcloud.authserver.service;
 
 import com.ruomm.javax.corex.StringUtils;
+import com.ruomm.javax.corex.TimeUtils;
 import com.ruomm.springcloud.authserver.config.AppConfig;
 import com.ruomm.springcloud.authserver.dal.CommonResponse;
 import com.ruomm.springcloud.authserver.dal.request.MessageSendReq;
@@ -36,9 +37,64 @@ public class MessageService {
     MsgTemplateMapper msgTemplateMapper;
 
     public CommonResponse send(String tpl_key,MessageSendReq req) {
-        MsgTemplateEntity msgTemplate = queryMsgTemplateEntity(tpl_key,0l, req);
+        MsgTemplateEntity msgTemplate = queryMsgTemplateEntity(tpl_key);
+        if (msgTemplate.getAuthType().intValue() == 0){
+            // 发送无需授权的短信
+        }
         log.info(msgTemplate.toString());
         return AppUtils.toNackCore();
+    }
+
+    public CommonResponse sendByAuthType0(MsgTemplateEntity msgTemplate,MessageSendReq req) {
+        String template = msgTemplate.getTemplate();
+        //${year},${month},${day},${time},${datetime},${userId},${userName}
+        //yyyy-MM-dd HH:mm:ss
+        String dateStr = TimeUtils.formatTime(System.currentTimeMillis(),AppConfig.DATE_FORMAT_MESSAGE);
+        template  = template.replace("${year}",dateStr.substring(0,4));
+        template  = template.replace("${month}",dateStr.substring(5,7));
+        template  = template.replace("${day}",dateStr.substring(8,10));
+        template  = template.replace("${time}",dateStr.substring(11,19));
+        template  = template.replace("${datetime}",dateStr);
+        String verifyCode = null;
+        if (template.contains("${verifycode}")){
+            verifyCode = AppConfig.TOKEN_HELPER_MSG.generateToken();
+            template  = template.replace("${verifycode}",verifyCode);
+        }
+        // 判断短信发送地址
+
+//        // 开始发送短信内容
+//        MsgContentEntity msgContentEntity = new MsgContentEntity();
+//        msgContentEntity.setMsgType(req.getMsgType());
+//        msgContentEntity.setMsgAddr(re);
+
+
+//        template.replace("")
+        return AppUtils.toNackCore();
+    }
+
+    /**
+     * 查找短信模块
+     * @param tpl_key 短信模板key
+     * @return 短信模块
+     */
+    private MsgTemplateEntity queryMsgTemplateEntity(String tpl_key){
+        MsgTemplateEntity queryObj = new MsgTemplateEntity();
+        queryObj.setTplKey(tpl_key);
+        MsgTemplateEntity resultObj = msgTemplateMapper.selectByPrimaryKey(queryObj);
+        if (null == resultObj) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板不存在，信息无法发送");
+        }
+        if (null == resultObj.getStatus() || resultObj.getStatus() != Template_Status_Ok) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板已停用，信息无法发送");
+        }
+        if (StringUtils.isEmpty(resultObj.getTemplate())) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板无内容，信息无法发送");
+        }
+
+        if (null == resultObj.getAuthType()) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板授权类型为空，信息无法发送");
+        }
+        return resultObj;
     }
 
     private MsgTemplateEntity queryMsgTemplateEntity(String tpl_key,Long userId, MessageSendReq req) {
