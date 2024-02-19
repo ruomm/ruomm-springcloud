@@ -15,9 +15,9 @@ import java.util.Date;
  * tableRemarks：信息模板表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-03 00:07
+ * @create 2024-02-19 16:46
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-03 00:07:49
+ * @mbg.generated do_not_delete_during_merge 2024-02-19 16:46:40
  */
 @Entity
 @Getter
@@ -26,23 +26,30 @@ import java.util.Date;
 @Table(name = "tbl_msg_template")
 public class MsgTemplateEntity {
     /**
-     * column: tbl_msg_template.id, datatype: BIGINT, length: 19, nullable: false
-     * remark: 主键ID
+     * column: tbl_msg_template.tpl_key, datatype: VARCHAR, length: 64, nullable: false
+     * remark: 短信模板主键KEY
      */
     @Id
-    @Column( name = "id" )
-    private Long id;
+    @Column( name = "tpl_key" )
+    private String tplKey;
 
     /**
-     * column: tbl_msg_template.bind_id, datatype: VARCHAR, length: 64, nullable: true
-     * remark: 关联主键ID。如是有关联主键ID，则短信发送前需要检查前一条关联短信是否验证通过。
+     * column: tbl_msg_template.tpl_name, datatype: VARCHAR, length: 64, nullable: false
+     * remark: 短信模板名称
      */
-    @Column( name = "bind_id" )
-    private String bindId;
+    @Column( name = "tpl_name" )
+    private String tplName;
+
+    /**
+     * column: tbl_msg_template.bind_tpl_key, datatype: VARCHAR, length: 64, nullable: true
+     * remark: 关联短信模板主键KEY。如是有关联主键KEY，则短信发送前需要检查前一条关联短信是否验证通过。
+     */
+    @Column( name = "bind_tpl_key" )
+    private String bindTplKey;
 
     /**
      * column: tbl_msg_template.template, datatype: VARCHAR, length: 1024, nullable: false
-     * remark: 短信模板。按照短信模板填充短信内容，通用替换字段：${verifycode},${year},${month},${day},${time},${datetime},${userId},${userName}
+     * remark: 短信模板内容。按照短信模板填充短信内容，通用替换字段：${verifycode},${year},${month},${day},${time},${datetime},${userId},${userName}
      */
     @Column( name = "template" )
     private String template;

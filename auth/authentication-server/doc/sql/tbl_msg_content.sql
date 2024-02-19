@@ -23,7 +23,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE `tbl_msg_content` (
   `id` bigint(0) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `alias_id` varchar(64) NOT NULL COMMENT '主键别名。需要返回短信ID时候，建议返回别名ID',
-  `template_id` bigint(0) NOT NULL COMMENT '信息模板ID',
+  `tpl_key` varchar(64) NOT NULL COMMENT '短信模板主键KEY',
   `user_id` bigint(0) NULL DEFAULT NULL COMMENT '用户ID',
   `msg_type` varchar(16) NOT NULL COMMENT '信息类型，mobile、email、weixin、qq等',
   `msg_addr` varchar(64) NOT NULL COMMENT '信息送达地址，没有user_id时候必须填写',

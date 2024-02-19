@@ -21,9 +21,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Table structure for tbl_message
 -- ----------------------------
 CREATE TABLE `tbl_msg_template`  (
-    `id` bigint(0) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `bind_id` varchar(64) NULL DEFAULT NULL COMMENT '关联主键ID。如是有关联主键ID，则短信发送前需要检查前一条关联短信是否验证通过。',
-    `template` varchar(1024) NOT NULL COMMENT '短信模板。按照短信模板填充短信内容，通用替换字段：${verifycode},${year},${month},${day},${time},${datetime},${userId},${userName}',
+    `tpl_key` varchar(64) NOT NULL COMMENT '短信模板主键KEY',
+    `tpl_name` varchar(64) NOT NULL COMMENT '短信模板名称',
+    `bind_tpl_key` varchar(64) NULL DEFAULT NULL COMMENT '关联短信模板主键KEY。如是有关联主键KEY，则短信发送前需要检查前一条关联短信是否验证通过。',
+    `template` varchar(1024) NOT NULL COMMENT '短信模板内容。按照短信模板填充短信内容，通用替换字段：${verifycode},${year},${month},${day},${time},${datetime},${userId},${userName}',
     `auth_type` int(0) NOT NULL COMMENT '短信发送授权控制。0.不需要授权；1.需要授权；2.需要授权并且是账户绑定的通讯方式；3.账户异常解冻，需要是账户绑定的通讯方式',
     `auth_uri` varchar(64) NULL DEFAULT NULL COMMENT '短信授权URI。URI为空则是通用短信，不为空则是特定URI用途的短信。',
     `valid_time` int(0) NULL DEFAULT NULL COMMENT '验证码有效期(单位秒)',
@@ -36,5 +37,5 @@ CREATE TABLE `tbl_msg_template`  (
     `created_at` timestamp(6) NOT NULL COMMENT '创建时间',
     `updated_at` timestamp(6) NOT NULL COMMENT '更新时间',
     `deleted_at` timestamp(6) NULL DEFAULT NULL COMMENT '删除时间',
-    PRIMARY KEY (`id`) USING BTREE
+    PRIMARY KEY (`tpl_key`) USING BTREE
 ) ENGINE = InnoDB COMMENT = '信息模板表';

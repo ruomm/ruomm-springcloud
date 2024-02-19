@@ -1,23 +1,19 @@
 package com.ruomm.springcloud.authserver.entry;
 
+import java.util.Date;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import java.util.Date;
 
 /**
  * tableName：tbl_msg_content
  * tableRemarks：信息内容表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-03 00:07
+ * @create 2024-02-19 16:46
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-03 00:07:49
+ * @mbg.generated do_not_delete_during_merge 2024-02-19 16:46:40
  */
 @Entity
 @Getter
@@ -41,11 +37,11 @@ public class MsgContentEntity {
     private String aliasId;
 
     /**
-     * column: tbl_msg_content.template_id, datatype: BIGINT, length: 19, nullable: false
-     * remark: 信息模板ID
+     * column: tbl_msg_content.tpl_key, datatype: VARCHAR, length: 64, nullable: false
+     * remark: 短信模板主键KEY
      */
-    @Column( name = "template_id" )
-    private Long templateId;
+    @Column( name = "tpl_key" )
+    private String tplKey;
 
     /**
      * column: tbl_msg_content.user_id, datatype: BIGINT, length: 19, nullable: true

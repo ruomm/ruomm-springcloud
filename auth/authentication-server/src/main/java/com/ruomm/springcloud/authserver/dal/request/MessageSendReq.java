@@ -2,8 +2,6 @@ package com.ruomm.springcloud.authserver.dal.request;
 
 import com.ruomm.springcloud.authserver.dal.request.sub.ReqKeyValuePair;
 import com.ruomm.webx.validatorx.validator.CheckAllowStr;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -21,9 +19,9 @@ import java.util.List;
 @Setter
 @ToString
 public class MessageSendReq {
-    @NotNull(message = "信息模板ID不能为空，且必须为正整数")
-    @Min(value = 1, message = "信息模板ID不能为空，且必须为正整数")
-    private Long templateId;
+//    @NotNull(message = "信息模板ID不能为空，且必须为正整数")
+//    @Min(value = 1, message = "信息模板ID不能为空，且必须为正整数")
+//    private Long templateId;
     @CheckAllowStr(allowStr = "mobile,email,weixin,qq", message = "信息类型必须是mobile,email,weixin,qq中的一个")
     private String msgType;
     @Length(max = 64,message = "信息送达地址不能超过64个字符")

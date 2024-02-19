@@ -35,73 +35,73 @@ public class MessageService {
     @Autowired
     MsgTemplateMapper msgTemplateMapper;
 
-    public CommonResponse verifyCodeSend(MessageSendReq req) {
-        MsgTemplateEntity msgTemplate = queryMsgTemplateEntity(0l, req);
+    public CommonResponse send(String tpl_key,MessageSendReq req) {
+        MsgTemplateEntity msgTemplate = queryMsgTemplateEntity(tpl_key,0l, req);
         log.info(msgTemplate.toString());
         return AppUtils.toNackCore();
     }
 
-    private MsgTemplateEntity queryMsgTemplateEntity(Long userId, MessageSendReq req) {
+    private MsgTemplateEntity queryMsgTemplateEntity(String tpl_key,Long userId, MessageSendReq req) {
         MsgTemplateEntity queryObj = new MsgTemplateEntity();
-        queryObj.setId(req.getTemplateId());
+        queryObj.setTplKey(tpl_key);
         MsgTemplateEntity resultObj = msgTemplateMapper.selectByPrimaryKey(queryObj);
         if (null == resultObj) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "templateId消息模板不存在，信息无法发送");
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板不存在，信息无法发送");
         }
         if (null == resultObj.getStatus() || resultObj.getStatus() != Template_Status_Ok) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "templateId消息模板已停用，信息无法发送");
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板已停用，信息无法发送");
         }
         if (StringUtils.isEmpty(resultObj.getTemplate())) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "templateId消息模板无内容，信息无法发送");
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板无内容，信息无法发送");
         }
 
         if (StringUtils.isEmpty(resultObj.getTemplate())) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "templateId消息模板无内容，信息无法发送");
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板无内容，信息无法发送");
         }
-        String msgFunction = resultObj.getTemplate().contains("$｛verifyCode｝") ? "验证码" : "信息";
+        String tplName = resultObj.getTplName();
         String msgAddr = null;
         if (resultObj.getAuthType() == 0) {
             msgAddr = req.getMsgAddr();
         } else if (resultObj.getAuthType() == 1) {
             msgAddr = req.getMsgAddr();
             if (null == userId || userId <= 0) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
             }
             UserEntity queryUser = new UserEntity();
             queryUser.setId(userId);
             UserEntity resultUser = userMapper.selectByPrimaryKey(queryUser);
             if (null == resultUser || resultUser.getStatus() != AppConfig.DB_STATUS_OK) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在或账户异常", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在或账户异常", tplName));
             }
         } else if (resultObj.getAuthType() == 2) {
             if (null == userId || userId <= 0) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
             }
             UserEntity queryUser = new UserEntity();
             queryUser.setId(userId);
             UserEntity resultUser = userMapper.selectByPrimaryKey(queryUser);
             if (null == resultUser || resultUser.getStatus() != AppConfig.DB_STATUS_OK) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在或账户异常", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在或账户异常", tplName));
             }
-            msgAddr = validBindMsgAddr(req.getMsgType(), req.getMsgBindAddr(), msgFunction, resultUser);
+            msgAddr = validBindMsgAddr(req.getMsgType(), req.getMsgBindAddr(), tplName, resultUser);
         } else if (resultObj.getAuthType() == 3) {
             if (null == userId || userId <= 0) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
             }
             UserEntity queryUser = new UserEntity();
             queryUser.setId(userId);
             UserEntity resultUser = userMapper.selectByPrimaryKey(queryUser);
             if (null == resultUser) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
             }
             if (resultUser.getStatus() <= 1 || resultUser.getStatus() >= 9) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不需要解冻，已恢复正常", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不需要解冻，已恢复正常", tplName));
             }
-            msgAddr = validBindMsgAddr(req.getMsgType(), req.getMsgBindAddr(), msgFunction, resultUser);
+            msgAddr = validBindMsgAddr(req.getMsgType(), req.getMsgBindAddr(), tplName, resultUser);
         }
         if (StringUtils.isEmpty(msgAddr)) {
             // 消息发送失败
-            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,送达地址为空。", msgFunction));
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,送达地址为空。", tplName));
         }
         // 开始解析模板的配置
         return resultObj;
