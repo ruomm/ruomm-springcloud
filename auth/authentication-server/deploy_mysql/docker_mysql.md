@@ -24,8 +24,13 @@ port = 3306
 # datadir = /usr/mysql/data
 # 允许最大连接数
 max_connections = 300
+# 允许最大用户连接数
+max_user_connections = 100
 # 允许连接失败的次数。
 max_connect_errors = 100
+# ip地址无限制
+bind-address = 0.0.0.0
+mysqlx-bind-address = 0.0.0.0
 # 服务端使用的字符集默认为utf8mb4
 character_set_server = utf8mb4
 # 连接服务端使用的字符集默认为utf8mb4_bin
