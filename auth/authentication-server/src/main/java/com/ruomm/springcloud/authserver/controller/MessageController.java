@@ -21,7 +21,7 @@ public class MessageController {
     @Autowired
     MessageService messageService;
     @PostMapping(value = "/send/{tpl_key}")
-    public CommonResponse send(@RequestPart String tpl_key, @Valid @RequestBody MessageSendReq req){
+    public CommonResponse send(@PathVariable String tpl_key, @Valid @RequestBody MessageSendReq req){
         if (StringUtils.isEmpty(tpl_key)){
             return AppUtils.toNackParam("消息模板不存在，消息发送错误");
         }

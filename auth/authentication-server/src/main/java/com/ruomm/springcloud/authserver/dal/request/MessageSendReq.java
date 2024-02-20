@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
+import org.hibernate.validator.constraints.Range;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ import java.util.List;
 @Setter
 @ToString
 public class MessageSendReq {
+    @Range(min = 1, message = "用户ID必须为正整数")
+    private Long userId;
     @CheckAllowStr(allowStr = "mobile,email,weixin,qq", message = "信息类型必须是mobile,email,weixin,qq中的一个")
     private String msgType;
     @Length(max = 64,message = "信息送达地址不能超过64个字符")
@@ -27,5 +30,4 @@ public class MessageSendReq {
     private String msgBindAddr;
     // template模板参数对应的键值对列表
     private List<ReqKeyValuePair> msgPairs;
-
 }

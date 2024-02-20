@@ -15,9 +15,9 @@ import java.util.Date;
  * tableRemarks：信息模板表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-19 16:46
+ * @create 2024-02-20 09:21
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-19 16:46:40
+ * @mbg.generated do_not_delete_during_merge 2024-02-20 09:21:41
  */
 @Entity
 @Getter
@@ -49,17 +49,24 @@ public class MsgTemplateEntity {
 
     /**
      * column: tbl_msg_template.template, datatype: VARCHAR, length: 1024, nullable: false
-     * remark: 短信模板内容。按照短信模板填充短信内容，通用替换字段：${verifycode},${year},${month},${day},${time},${datetime},${userId},${userName}
+     * remark: 短信模板内容。按照短信模板填充短信内容，通用替换字段：${verifycode},${validtime},${appname},${year},${month},${day},${time},${datetime},${userId},${userName}
      */
     @Column( name = "template" )
     private String template;
 
     /**
      * column: tbl_msg_template.auth_type, datatype: INTEGER, length: 10, nullable: false
-     * remark: 短信发送授权控制。0.不需要授权；1.需要授权；2.需要授权并且是账户绑定的通讯方式；3.账户异常解冻，需要是账户绑定的通讯方式
+     * remark: 短信发送授权控制。0.不需要授权；1.需要授权；2.需要授权并且是账户绑定的通讯方式；3.需要校验账户；4.需要校验账户并且是账户绑定的通讯方式
      */
     @Column( name = "auth_type" )
     private Integer authType;
+
+    /**
+     * column: tbl_msg_template.user_status, datatype: INTEGER, length: 10, nullable: false
+     * remark: 发送短信时候的用户状态。1.正常；2.密码过期；3.登录限制；9.停用
+     */
+    @Column( name = "user_status" )
+    private Integer userStatus;
 
     /**
      * column: tbl_msg_template.auth_uri, datatype: VARCHAR, length: 64, nullable: true

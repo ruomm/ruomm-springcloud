@@ -1,20 +1,29 @@
 package com.ruomm.springcloud.authserver.service;
 
+import com.ruomm.javax.corex.ListUtils;
+import com.ruomm.javax.corex.RegexUtils;
 import com.ruomm.javax.corex.StringUtils;
 import com.ruomm.javax.corex.TimeUtils;
 import com.ruomm.springcloud.authserver.config.AppConfig;
+import com.ruomm.springcloud.authserver.config.ConfigProperties;
 import com.ruomm.springcloud.authserver.dal.CommonResponse;
+import com.ruomm.springcloud.authserver.dal.core.MsgContentByTemplate;
 import com.ruomm.springcloud.authserver.dal.request.MessageSendReq;
+import com.ruomm.springcloud.authserver.dal.request.sub.ReqKeyValuePair;
 import com.ruomm.springcloud.authserver.dao.MsgContentMapper;
 import com.ruomm.springcloud.authserver.dao.MsgTemplateMapper;
 import com.ruomm.springcloud.authserver.dao.UserMapper;
+import com.ruomm.springcloud.authserver.entry.MsgContentEntity;
 import com.ruomm.springcloud.authserver.entry.MsgTemplateEntity;
 import com.ruomm.springcloud.authserver.entry.UserEntity;
 import com.ruomm.springcloud.authserver.exception.WebAppException;
 import com.ruomm.springcloud.authserver.utils.AppUtils;
+import com.ruomm.springcloud.authserver.utils.WebUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 /**
  * @author 牛牛-研发部-www.ruomm.com
@@ -25,6 +34,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class MessageService {
+    @Autowired
+    ConfigProperties configProperties;
     private static final int Template_Status_Ok = 1;
     private static final int Msg_Status_Enable = 1;
     private static final int Msg_Status_Valid_Ok = 2;
@@ -37,39 +48,41 @@ public class MessageService {
     MsgTemplateMapper msgTemplateMapper;
 
     public CommonResponse send(String tpl_key,MessageSendReq req) {
+        // 设置默认的信息类型为手机号
+        String msgType = StringUtils.isEmpty(req.getMsgType())?"mobile":req.getMsgType();
+        req.setMsgType(msgType);
+        // 获取消息模板
         MsgTemplateEntity msgTemplate = queryMsgTemplateEntity(tpl_key);
-        if (msgTemplate.getAuthType().intValue() == 0){
-            // 发送无需授权的短信
+        // 获取用户信息
+        UserEntity userEntity = parseUserEntityByTemplate(msgTemplate,req.getUserId());
+        // 获取信息发送地址
+        String msgAddr = parseMsgAddr(msgTemplate,userEntity,req);
+        req.setMsgAddr(msgAddr);
+        //  获取真正需要发送的信息内容
+        MsgContentByTemplate msgContentByTemplate = parseMsgContentByTemplate(msgTemplate,userEntity,req);
+        // 开始发送短信
+        Date dateNow = new Date();
+        MsgContentEntity msgContentEntity = new MsgContentEntity();
+        msgContentEntity.setTplKey(msgTemplate.getTplKey());
+        if (null!=userEntity){
+            msgContentEntity.setUserId(userEntity.getId());
         }
-        log.info(msgTemplate.toString());
-        return AppUtils.toNackCore();
-    }
-
-    public CommonResponse sendByAuthType0(MsgTemplateEntity msgTemplate,MessageSendReq req) {
-        String template = msgTemplate.getTemplate();
-        //${year},${month},${day},${time},${datetime},${userId},${userName}
-        //yyyy-MM-dd HH:mm:ss
-        String dateStr = TimeUtils.formatTime(System.currentTimeMillis(),AppConfig.DATE_FORMAT_MESSAGE);
-        template  = template.replace("${year}",dateStr.substring(0,4));
-        template  = template.replace("${month}",dateStr.substring(5,7));
-        template  = template.replace("${day}",dateStr.substring(8,10));
-        template  = template.replace("${time}",dateStr.substring(11,19));
-        template  = template.replace("${datetime}",dateStr);
-        String verifyCode = null;
-        if (template.contains("${verifycode}")){
-            verifyCode = AppConfig.TOKEN_HELPER_MSG.generateToken();
-            template  = template.replace("${verifycode}",verifyCode);
+        msgContentEntity.setMsgType(req.getMsgType());
+        msgContentEntity.setMsgAddr(req.getMsgAddr());
+        msgContentEntity.setMsgContent(msgContentByTemplate.getContent());
+        msgContentEntity.setVerifyCode(msgContentByTemplate.getVerifyCode());
+        msgContentEntity.setValidTime(msgContentByTemplate.getValidTime());
+        msgContentEntity.setStatus(1);
+        msgContentEntity.setVersion(1);
+        msgContentEntity.setCreatedAt(dateNow);
+        msgContentEntity.setUpdatedAt(dateNow);
+        int updateResult = msgContentMapper.insertSelective(msgContentEntity);
+        if (updateResult!=1){
+            log.error("消息发送失败，消息内容为："+msgContentEntity.getMsgContent());
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,入库失败", msgTemplate.getTplName()));
         }
-        // 判断短信发送地址
-
-//        // 开始发送短信内容
-//        MsgContentEntity msgContentEntity = new MsgContentEntity();
-//        msgContentEntity.setMsgType(req.getMsgType());
-//        msgContentEntity.setMsgAddr(re);
-
-
-//        template.replace("")
-        return AppUtils.toNackCore();
+        log.info("消息发送成功，消息内容为："+msgContentEntity.getMsgContent());
+        return AppUtils.toAck();
     }
 
     /**
@@ -96,51 +109,13 @@ public class MessageService {
         }
         return resultObj;
     }
-
-    private MsgTemplateEntity queryMsgTemplateEntity(String tpl_key,Long userId, MessageSendReq req) {
-        MsgTemplateEntity queryObj = new MsgTemplateEntity();
-        queryObj.setTplKey(tpl_key);
-        MsgTemplateEntity resultObj = msgTemplateMapper.selectByPrimaryKey(queryObj);
-        if (null == resultObj) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板不存在，信息无法发送");
-        }
-        if (null == resultObj.getStatus() || resultObj.getStatus() != Template_Status_Ok) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板已停用，信息无法发送");
-        }
-        if (StringUtils.isEmpty(resultObj.getTemplate())) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板无内容，信息无法发送");
-        }
-
-        if (StringUtils.isEmpty(resultObj.getTemplate())) {
-            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板无内容，信息无法发送");
-        }
-        String tplName = resultObj.getTplName();
-        String msgAddr = null;
-        if (resultObj.getAuthType() == 0) {
-            msgAddr = req.getMsgAddr();
-        } else if (resultObj.getAuthType() == 1) {
-            msgAddr = req.getMsgAddr();
-            if (null == userId || userId <= 0) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
-            }
-            UserEntity queryUser = new UserEntity();
-            queryUser.setId(userId);
-            UserEntity resultUser = userMapper.selectByPrimaryKey(queryUser);
-            if (null == resultUser || resultUser.getStatus() != AppConfig.DB_STATUS_OK) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在或账户异常", tplName));
-            }
-        } else if (resultObj.getAuthType() == 2) {
-            if (null == userId || userId <= 0) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
-            }
-            UserEntity queryUser = new UserEntity();
-            queryUser.setId(userId);
-            UserEntity resultUser = userMapper.selectByPrimaryKey(queryUser);
-            if (null == resultUser || resultUser.getStatus() != AppConfig.DB_STATUS_OK) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在或账户异常", tplName));
-            }
-            msgAddr = validBindMsgAddr(req.getMsgType(), req.getMsgBindAddr(), tplName, resultUser);
-        } else if (resultObj.getAuthType() == 3) {
+    // 依据消息模板获取并验证用户信息
+    private UserEntity parseUserEntityByTemplate(MsgTemplateEntity msgTemplateEntity,Long userId){
+        int authType = msgTemplateEntity.getAuthType().intValue();
+        String tplName = msgTemplateEntity.getTplName();
+        if(authType == 0){
+            return null;
+        } else if (authType == 1 || authType == 2){
             if (null == userId || userId <= 0) {
                 throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
             }
@@ -150,61 +125,174 @@ public class MessageService {
             if (null == resultUser) {
                 throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
             }
-            if (resultUser.getStatus() <= 1 || resultUser.getStatus() >= 9) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不需要解冻，已恢复正常", tplName));
+            int tplUserStatus = null == msgTemplateEntity.getUserStatus()? 0:msgTemplateEntity.getUserStatus().intValue();
+            if (tplUserStatus<=0){
+                if (resultUser.getStatus().intValue() != AppConfig.DB_STATUS_OK) {
+                    throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户状态：%s", tplName, WebUtils.parseUserStatus(resultUser.getStatus())));
+                }
+            } else {
+                if (resultUser.getStatus().intValue() != tplUserStatus) {
+                    throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户状态：%s", tplName, WebUtils.parseUserStatus(resultUser.getStatus())));
+                }
             }
-            msgAddr = validBindMsgAddr(req.getMsgType(), req.getMsgBindAddr(), tplName, resultUser);
+            return resultUser;
+        } else if (authType == 3 || authType == 4){
+            if (null == userId || userId <= 0) {
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
+            }
+            UserEntity queryUser = new UserEntity();
+            queryUser.setId(userId);
+            UserEntity resultUser = userMapper.selectByPrimaryKey(queryUser);
+            if (null == resultUser) {
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户不存在", tplName));
+            }
+            int tplUserStatus = null == msgTemplateEntity.getUserStatus()? 0:msgTemplateEntity.getUserStatus().intValue();
+            if (tplUserStatus<=0){
+                if (resultUser.getStatus().intValue() == 0 || resultUser.getStatus().intValue() == 9) {
+                    throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户状态：%s", tplName, WebUtils.parseUserStatus(resultUser.getStatus())));
+                }
+            } else {
+                if (resultUser.getStatus().intValue() != tplUserStatus) {
+                    throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户状态：%s", tplName, WebUtils.parseUserStatus(resultUser.getStatus())));
+                }
+            }
+            return resultUser;
+        } else {
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,消息模板授权控制不正确", tplName));
         }
-        if (StringUtils.isEmpty(msgAddr)) {
-            // 消息发送失败
-            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,送达地址为空。", tplName));
+    }
+    // 解析消息发送地址
+    private String parseMsgAddr(MsgTemplateEntity msgTemplateEntity,UserEntity userEntity,MessageSendReq req){
+        String tplName = msgTemplateEntity.getTplName();
+        String msgType = req.getMsgType();
+        String msgAddr = null;
+        int authType = msgTemplateEntity.getAuthType().intValue();
+        if(authType == 0){
+            msgAddr = req.getMsgAddr();
+        } else if(authType == 1){
+            msgAddr = req.getMsgAddr();
+        } else if(authType == 2){
+            msgAddr = parseBindMsgAddr(tplName,msgType,req.getMsgAddr(),userEntity);
+        } else if(authType == 3){
+            msgAddr = req.getMsgAddr();
+        } else if(authType == 4){
+            msgAddr = parseBindMsgAddr(tplName,msgType,req.getMsgAddr(),userEntity);
+        } else {
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,消息模板授权控制不正确", tplName));
         }
-        // 开始解析模板的配置
-        return resultObj;
+        if (StringUtils.isEmpty(msgAddr)){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,%s不能为空", tplName,WebUtils.parseMsgType(msgType)));
+        }
+        if (StringUtils.isEquals(msgType, "mobile")) {
+            if (!RegexUtils.doRegex(msgAddr,AppConfig.REGEX_MOBILE)){
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,%s不合法", tplName,WebUtils.parseMsgType(msgType)));
+            }
+        } else if (StringUtils.isEquals(msgType, "email")) {
+            if (!RegexUtils.doRegex(msgAddr,AppConfig.REGEX_EMAIL)){
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,%s不合法", tplName,WebUtils.parseMsgType(msgType)));
+            }
+        } else if (StringUtils.isEquals(msgType, "weixin")) {
+            int msgAddrLength = StringUtils.getLength(msgAddr);
+            if (msgAddrLength<=0 || msgAddrLength>64){
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,%s不合法", tplName,WebUtils.parseMsgType(msgType)));
+            }
+        } else if (StringUtils.isEquals(msgType, "qq")) {
+            if (!RegexUtils.doRegex(msgAddr,AppConfig.REGEX_QQ)){
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,%s不合法", tplName,WebUtils.parseMsgType(msgType)));
+            }
+        }
+        return msgAddr;
     }
 
-    private String validBindMsgAddr(String msgType, String reqMsgAddr, String msgFunction, UserEntity resultUser) {
+    // 获取用户绑定的信息发送地址
+    private String parseBindMsgAddr(String tplName,String msgType, String reqMsgAddr, UserEntity userEntity) {
         String msgAddr = null;
         if (StringUtils.isEquals(msgType, "mobile")) {
-            String msgAddrInDb = resultUser.getBindPhone();
+            String msgAddrInDb = userEntity.getBindPhone();
             if (StringUtils.isEmpty(msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定手机号", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             if (StringUtils.isNotEmpty(reqMsgAddr) && !StringUtils.isEquals(reqMsgAddr, msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的手机号", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             msgAddr = msgAddrInDb;
         } else if (StringUtils.isEquals(msgType, "email")) {
-            String msgAddrInDb = resultUser.getBindEmail();
+            String msgAddrInDb = userEntity.getBindEmail();
             if (StringUtils.isEmpty(msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定Email", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             if (StringUtils.isNotEmpty(reqMsgAddr) && !StringUtils.isEquals(reqMsgAddr, msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的Email", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             msgAddr = msgAddrInDb;
         } else if (StringUtils.isEquals(msgType, "weixin")) {
-            String msgAddrInDb = resultUser.getBindWeixin();
+            String msgAddrInDb = userEntity.getBindWeixin();
             if (StringUtils.isEmpty(msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定微信", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             if (StringUtils.isNotEmpty(reqMsgAddr) && !StringUtils.isEquals(reqMsgAddr, msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的微信", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             msgAddr = msgAddrInDb;
         } else if (StringUtils.isEquals(msgType, "qq")) {
-            String msgAddrInDb = resultUser.getBindQq();
+            String msgAddrInDb = userEntity.getBindQq();
             if (StringUtils.isEmpty(msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定QQ", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,用户没有绑定%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             if (StringUtils.isNotEmpty(reqMsgAddr) && !StringUtils.isEquals(reqMsgAddr, msgAddrInDb)) {
-                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的QQ", msgFunction));
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的%s", tplName,WebUtils.parseMsgType(msgType)));
             }
             msgAddr = msgAddrInDb;
         }
         if (StringUtils.isEmpty(msgAddr)) {
-            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的通讯方式", msgFunction));
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,不是该用户绑定的%s", tplName,WebUtils.parseMsgType(msgType)));
         }
         return msgAddr;
+    }
+
+    // 获取真正需要发送的信息内容
+    private MsgContentByTemplate parseMsgContentByTemplate(MsgTemplateEntity msgTemplate, UserEntity userEntity, MessageSendReq req){
+        MsgContentByTemplate msgContentByTemplate = new MsgContentByTemplate();
+        String template = msgTemplate.getTemplate();
+        //${year},${month},${day},${time},${datetime},${userId},${userName}
+        //yyyy-MM-dd HH:mm:ss
+        String dateStr = TimeUtils.formatTime(System.currentTimeMillis(),AppConfig.DATE_FORMAT_MESSAGE);
+        template  = template.replace("${year}",dateStr.substring(0,4));
+        template  = template.replace("${month}",dateStr.substring(5,7));
+        template  = template.replace("${day}",dateStr.substring(8,10));
+        template  = template.replace("${time}",dateStr.substring(11,19));
+        template  = template.replace("${datetime}",dateStr);
+        template  = template.replace("${appname}",configProperties.getVerifyCodeConfig().getAppName());
+        if (null!=userEntity){
+            template  = template.replace("${userId}",userEntity.getId()+"");
+            template  = template.replace("${userName}",userEntity.getUserName());
+            template  = template.replace("${nickName}",userEntity.getNickName());
+        }
+        String verifyCode = null;
+        if (template.contains("${verifycode}")){
+            verifyCode = AppConfig.TOKEN_HELPER_MSG.generateToken();
+            template  = template.replace("${verifycode}",verifyCode);
+//            解析验证码有效期
+            int validTime = WebUtils.parseMsgValidTime(msgTemplate,configProperties);
+            String validTimeStr = WebUtils.formatMsgValidTime(validTime);
+            template  = template.replace("${validtime}",validTimeStr);
+            msgContentByTemplate.setVerifyCode(verifyCode);
+            msgContentByTemplate.setValidTime(validTime);
+            msgContentByTemplate.setValidTimeStr(validTimeStr);
+        }
+        // 开始依据参数替换消息模板
+        int msgPairsSize = ListUtils.getSize(req.getMsgPairs());
+        for (int i=0;i<msgPairsSize;i++){
+            ReqKeyValuePair keyValuePair = req.getMsgPairs().get(i);
+            if (StringUtils.isEmpty(keyValuePair.getKey())){
+                continue;
+            }
+            template  = template.replace("${" +keyValuePair.getKey()+ "}",StringUtils.nullStrToEmpty(keyValuePair.getValue()));
+        }
+        if (template.contains("${")){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,消息模板解析失败，部分字段没有赋值", msgTemplate.getTplName()));
+        }
+        msgContentByTemplate.setContent(template);
+        return msgContentByTemplate;
     }
 }
