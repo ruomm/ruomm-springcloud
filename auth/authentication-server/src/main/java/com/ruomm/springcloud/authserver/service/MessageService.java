@@ -22,8 +22,13 @@ import com.ruomm.springcloud.authserver.utils.WebUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.tags.EditorAwareTag;
+import tk.mybatis.mapper.entity.Example;
 
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author 牛牛-研发部-www.ruomm.com
@@ -63,6 +68,7 @@ public class MessageService {
         // 开始发送短信
         Date dateNow = new Date();
         MsgContentEntity msgContentEntity = new MsgContentEntity();
+        msgContentEntity.setAliasId(AppConfig.TOKEN_HELPER.generateToken(32));
         msgContentEntity.setTplKey(msgTemplate.getTplKey());
         if (null!=userEntity){
             msgContentEntity.setUserId(userEntity.getId());
@@ -294,5 +300,34 @@ public class MessageService {
         }
         msgContentByTemplate.setContent(template);
         return msgContentByTemplate;
+    }
+    // 验证短信发送限制-目标地址
+    private boolean verifyLimitByMsgAddr(MsgTemplateEntity msgTemplate, UserEntity userEntity, MessageSendReq req) {
+        if (null!=msgTemplate.getLimitByAddr()&&msgTemplate.getLimitByAddr().intValue()>0){
+            // 依据模板查找短信条数
+            Example exampleForMsg = new Example(MsgContentEntity.class);
+            Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();
+            criteriaForMsg.andEqualTo("tplKey",msgTemplate.getTplKey());
+            criteriaForMsg.andIsNotNull("status");
+            criteriaForMsg.andGreaterThan("status",0);
+            Date dateTody = null;
+            try {
+                String dateStr = TimeUtils.formatTime(System.currentTimeMillis(),AppConfig.DATE_FORMAT_MESSAGE);
+                dateStr = dateStr.substring(0,10)+" 00:00:00";
+                dateTody = AppConfig.DATE_FORMAT_MESSAGE.parse(dateStr);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            if (!ListUtils.isEmpty(jobIdRunningList)) {
+                criteriaexampleForServer.andNotIn("jobId", jobIdRunningList);
+            }
+            List<Integer> statusNotIn = new ArrayList<>();
+            statusNotIn.add(JobStatus.DB_OK);
+            statusNotIn.add(JobStatus.DB_ERR);
+            statusNotIn.add(JobStatus.DB_PART_ERR);
+            MsgContentEntity queryMsg = new MsgContentEntity();
+            queryMsg.setTplKey(msgTemplate.getTplKey());
+
+        }
     }
 }

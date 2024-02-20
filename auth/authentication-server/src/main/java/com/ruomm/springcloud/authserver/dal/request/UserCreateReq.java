@@ -15,6 +15,7 @@ public class UserCreateReq {
     @NotNull(message = "用户名必须填写，且必须为4-16位")
     @Length(min = 4,max = 16,message = "用户名必须填写，且必须为4-16位")
     private String userName;
+    private String bindPhone;
     @NotNull(message = "昵称必须填写，且必须为2-32位")
     @Length(min = 2,max = 32,message = "昵称必须填写，且必须为2-32位")
     private String nickName;
