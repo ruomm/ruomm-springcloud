@@ -22,13 +22,10 @@ import com.ruomm.springcloud.authserver.utils.WebUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.tags.EditorAwareTag;
 import tk.mybatis.mapper.entity.Example;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * @author 牛牛-研发部-www.ruomm.com
@@ -63,6 +60,7 @@ public class MessageService {
         // 获取信息发送地址
         String msgAddr = parseMsgAddr(msgTemplate,userEntity,req);
         req.setMsgAddr(msgAddr);
+        verifyLimitByMsgAddr(msgTemplate,userEntity,req);
         //  获取真正需要发送的信息内容
         MsgContentByTemplate msgContentByTemplate = parseMsgContentByTemplate(msgTemplate,userEntity,req);
         // 开始发送短信
@@ -303,6 +301,7 @@ public class MessageService {
     }
     // 验证短信发送限制-目标地址
     private boolean verifyLimitByMsgAddr(MsgTemplateEntity msgTemplate, UserEntity userEntity, MessageSendReq req) {
+        String tplName = msgTemplate.getTplName();
         if (null!=msgTemplate.getLimitByAddr()&&msgTemplate.getLimitByAddr().intValue()>0){
             // 依据模板查找短信条数
             Example exampleForMsg = new Example(MsgContentEntity.class);
@@ -310,24 +309,41 @@ public class MessageService {
             criteriaForMsg.andEqualTo("tplKey",msgTemplate.getTplKey());
             criteriaForMsg.andIsNotNull("status");
             criteriaForMsg.andGreaterThan("status",0);
-            Date dateTody = null;
+            Date dateToday = null;
             try {
                 String dateStr = TimeUtils.formatTime(System.currentTimeMillis(),AppConfig.DATE_FORMAT_MESSAGE);
                 dateStr = dateStr.substring(0,10)+" 00:00:00";
-                dateTody = AppConfig.DATE_FORMAT_MESSAGE.parse(dateStr);
+                dateToday = AppConfig.DATE_FORMAT_MESSAGE.parse(dateStr);
             } catch (ParseException e) {
-                throw new RuntimeException(e);
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,查询日期转换错误", tplName));
             }
-            if (!ListUtils.isEmpty(jobIdRunningList)) {
-                criteriaexampleForServer.andNotIn("jobId", jobIdRunningList);
+            criteriaForMsg.andGreaterThanOrEqualTo("createdAt",dateToday);
+            int count = msgContentMapper.selectCountByExample(exampleForMsg);
+            if (count >=msgTemplate.getLimitByAddr().intValue()){
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,超过该接口当天同一手机号发送限制，限制次数为%s", tplName,msgTemplate.getLimitByAddr().intValue()+""));
             }
-            List<Integer> statusNotIn = new ArrayList<>();
-            statusNotIn.add(JobStatus.DB_OK);
-            statusNotIn.add(JobStatus.DB_ERR);
-            statusNotIn.add(JobStatus.DB_PART_ERR);
-            MsgContentEntity queryMsg = new MsgContentEntity();
-            queryMsg.setTplKey(msgTemplate.getTplKey());
-
         }
+        if (configProperties.getVerifyCodeConfig().getLimitByAddr()>0){
+            // 依据模板查找短信条数
+            Example exampleForMsg = new Example(MsgContentEntity.class);
+            Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();
+//            criteriaForMsg.andEqualTo("tplKey",msgTemplate.getTplKey());
+            criteriaForMsg.andIsNotNull("status");
+            criteriaForMsg.andGreaterThan("status",0);
+            Date dateToday = null;
+            try {
+                String dateStr = TimeUtils.formatTime(System.currentTimeMillis(),AppConfig.DATE_FORMAT_MESSAGE);
+                dateStr = dateStr.substring(0,10)+" 00:00:00";
+                dateToday = AppConfig.DATE_FORMAT_MESSAGE.parse(dateStr);
+            } catch (ParseException e) {
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,查询日期转换错误", tplName));
+            }
+            criteriaForMsg.andGreaterThanOrEqualTo("createdAt",dateToday);
+            int count = msgContentMapper.selectCountByExample(exampleForMsg);
+            if (count >=configProperties.getVerifyCodeConfig().getLimitByAddr()){
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,超过该接口当天同一手机号发送限制，限制次数为%s", tplName,configProperties.getVerifyCodeConfig().getLimitByAddr()+""));
+            }
+        }
+        return true;
     }
 }
