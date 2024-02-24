@@ -11,9 +11,9 @@ import lombok.ToString;
  * tableRemarks：用户表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-19 16:46
+ * @create 2024-02-24 09:01
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-19 16:46:40
+ * @mbg.generated do_not_delete_during_merge 2024-02-24 09:01:15
  */
 @Entity
 @Getter

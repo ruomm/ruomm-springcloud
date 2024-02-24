@@ -1,10 +1,12 @@
 package com.ruomm.springcloud.authserver.controller;
 
+import com.ruomm.javax.basex.IPUtils;
 import com.ruomm.javax.corex.StringUtils;
 import com.ruomm.springcloud.authserver.dal.CommonResponse;
 import com.ruomm.springcloud.authserver.dal.request.MessageSendReq;
 import com.ruomm.springcloud.authserver.service.MessageService;
 import com.ruomm.springcloud.authserver.utils.AppUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +22,18 @@ import org.springframework.web.bind.annotation.*;
 public class MessageController {
     @Autowired
     MessageService messageService;
+
     @PostMapping(value = "/send/{tpl_key}")
-    public CommonResponse send(@PathVariable String tpl_key, @Valid @RequestBody MessageSendReq req){
-        if (StringUtils.isEmpty(tpl_key)){
+    public CommonResponse send(HttpServletRequest httpRequest, @PathVariable String tpl_key, @Valid @RequestBody MessageSendReq req) {
+        String clientIp = IPUtils.getRequestIP(httpRequest);
+        if (StringUtils.isEmpty(clientIp) || clientIp.equalsIgnoreCase("unknown")) {
+            return AppUtils.toNackCore("获取客户端信息错误");
+        }
+        req.setClientIp(clientIp);
+        if (StringUtils.isEmpty(tpl_key)) {
             return AppUtils.toNackParam("消息模板不存在，消息发送错误");
         }
-        return messageService.send(tpl_key,req);
+        return messageService.send(tpl_key, req);
 //        return AppUtils.toNackCore();
     }
 }

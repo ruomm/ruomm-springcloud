@@ -30,4 +30,8 @@ public class MessageSendReq {
     private String msgBindAddr;
     // template模板参数对应的键值对列表
     private List<ReqKeyValuePair> msgPairs;
+    //终端编号
+    private String clientId;
+    //终端IP地址
+    private String clientIp;
 }

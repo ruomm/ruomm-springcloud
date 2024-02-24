@@ -1,19 +1,23 @@
 package com.ruomm.springcloud.authserver.entry;
 
-import java.util.Date;
-import javax.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.util.Date;
 
 /**
  * tableName：tbl_msg_content
  * tableRemarks：信息内容表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-19 16:46
+ * @create 2024-02-24 09:01
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-19 16:46:40
+ * @mbg.generated do_not_delete_during_merge 2024-02-24 09:01:15
  */
 @Entity
 @Getter
@@ -98,6 +102,27 @@ public class MsgContentEntity {
      */
     @Column( name = "status" )
     private Integer status;
+
+    /**
+     * column: tbl_msg_content.client_id, datatype: VARCHAR, length: 64, nullable: true
+     * remark: 客户端编号
+     */
+    @Column( name = "client_id" )
+    private String clientId;
+
+    /**
+     * column: tbl_msg_content.client_host, datatype: VARCHAR, length: 64, nullable: true
+     * remark: 客户端host地址
+     */
+    @Column( name = "client_host" )
+    private String clientHost;
+
+    /**
+     * column: tbl_msg_content.client_ip, datatype: VARCHAR, length: 64, nullable: true
+     * remark: 客户端IP地址
+     */
+    @Column( name = "client_ip" )
+    private String clientIp;
 
     /**
      * column: tbl_msg_content.version, datatype: INTEGER, length: 10, nullable: false

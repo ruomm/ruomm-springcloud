@@ -1,23 +1,19 @@
 package com.ruomm.springcloud.authserver.entry;
 
+import java.util.Date;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import java.util.Date;
 
 /**
  * tableName：tbl_msg_template
  * tableRemarks：信息模板表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-20 09:21
+ * @create 2024-02-24 09:01
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-20 09:21:41
+ * @mbg.generated do_not_delete_during_merge 2024-02-24 09:01:15
  */
 @Entity
 @Getter
