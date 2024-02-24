@@ -19,7 +19,7 @@ public class ConfigVerifyCode {
     // # 验证码有效期(单位秒)
     private String validTime;
     // # 再次发送间隔(单位秒)
-    private String repeatSkipTime;
+    private int repeatSkipTime;
     // # 同一设备，一天发送的次数限制
     private int limitByTerm;
     // # 同一用户，一天发送的次数限制

@@ -72,6 +72,7 @@ public class MessageService {
         verifyLimitByMsgAddr(msgTemplate,req,dateToday);
         verifyLimitByClientInfo(msgTemplate,req,dateToday);
         verifyLimitByUserId(msgTemplate, userEntity,dateToday);
+        verifyRepeatSkipTime(msgTemplate,req);
         //  获取真正需要发送的信息内容
         MsgContentByTemplate msgContentByTemplate = parseMsgContentByTemplate(msgTemplate, userEntity, req);
         // 开始发送短信
@@ -416,6 +417,43 @@ public class MessageService {
             int count = msgContentMapper.selectCountByExample(exampleForMsg);
             if (count >= configProperties.getVerifyCodeConfig().getLimitByTerm()) {
                 throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,超过该接口当天同一客户端发送限制，限制次数为%s", tplName, configProperties.getVerifyCodeConfig().getLimitByTerm() + ""));
+            }
+        }
+        return true;
+    }
+
+    // 验证短信再次发送间隔时间
+    private boolean verifyRepeatSkipTime(MsgTemplateEntity msgTemplate, MessageSendReq req) {
+        String tplName = msgTemplate.getTplName();
+        Date dateNow = new Date();
+        if (null != msgTemplate.getRepeatSkipTime() && msgTemplate.getRepeatSkipTime().intValue() > 0) {
+            Date dateQuery = new Date(dateNow.getTime()-msgTemplate.getRepeatSkipTime().intValue()*1000l);
+            // 依据模板查找短信条数
+            Example exampleForMsg = new Example(MsgContentEntity.class);
+            Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();
+            criteriaForMsg.andEqualTo("tplKey", msgTemplate.getTplKey());
+            criteriaForMsg.andIsNotNull("status");
+            criteriaForMsg.andGreaterThan("status", 0);
+            criteriaForMsg.andEqualTo("clientIp", req.getClientIp());
+            criteriaForMsg.andGreaterThanOrEqualTo("createdAt", dateQuery);
+            int count = msgContentMapper.selectCountByExample(exampleForMsg);
+            if (count > 0) {
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,再次发送间隔时间太短。", tplName));
+            }
+        }
+        if (configProperties.getVerifyCodeConfig().getRepeatSkipTime() > 0) {
+            Date dateQuery = new Date(dateNow.getTime()-configProperties.getVerifyCodeConfig().getRepeatSkipTime()*1000l);
+            // 依据模板查找短信条数
+            Example exampleForMsg = new Example(MsgContentEntity.class);
+            Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();
+//            criteriaForMsg.andEqualTo("tplKey",msgTemplate.getTplKey());
+            criteriaForMsg.andIsNotNull("status");
+            criteriaForMsg.andGreaterThan("status", 0);
+            criteriaForMsg.andEqualTo("clientIp", req.getClientIp());
+            criteriaForMsg.andGreaterThanOrEqualTo("createdAt", dateQuery);
+            int count = msgContentMapper.selectCountByExample(exampleForMsg);
+            if (count > 0) {
+                throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,再次发送间隔时间太短。", tplName));
             }
         }
         return true;
