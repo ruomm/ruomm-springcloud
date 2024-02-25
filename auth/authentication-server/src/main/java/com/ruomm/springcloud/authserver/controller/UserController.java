@@ -4,7 +4,9 @@ import com.ruomm.javax.basex.IPUtils;
 import com.ruomm.javax.corex.StringUtils;
 import com.ruomm.springcloud.authserver.dal.CommonResponse;
 import com.ruomm.springcloud.authserver.dal.request.UserCreateReq;
+import com.ruomm.springcloud.authserver.dal.request.UserLoginReq;
 import com.ruomm.springcloud.authserver.dal.response.UserCreateResp;
+import com.ruomm.springcloud.authserver.dal.response.UserLoginResp;
 import com.ruomm.springcloud.authserver.service.MessageService;
 import com.ruomm.springcloud.authserver.service.UserManagerService;
 import com.ruomm.springcloud.authserver.utils.AppUtils;
@@ -39,5 +41,14 @@ public class UserController {
         }
         messageService.valid("user_register","mobile",req.getBindPhone(),null,req.getVerifyCode(),null,clientIp,null);
         return userManagerService.createUser(req);
+    }
+
+    @PostMapping(value = "login")
+    public CommonResponse<UserLoginResp> loginUser(HttpServletRequest httpServletRequest, @Valid @RequestBody UserLoginReq req) {
+        String clientIp = IPUtils.getRequestIP(httpServletRequest);
+        if (StringUtils.isEmpty(clientIp) || clientIp.equalsIgnoreCase("unknown")) {
+            return AppUtils.toNackCore("获取客户端信息错误");
+        }
+        return userManagerService.loginUser(req);
     }
 }
