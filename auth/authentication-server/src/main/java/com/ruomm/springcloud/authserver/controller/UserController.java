@@ -1,9 +1,14 @@
 package com.ruomm.springcloud.authserver.controller;
 
+import com.ruomm.javax.basex.IPUtils;
+import com.ruomm.javax.corex.StringUtils;
 import com.ruomm.springcloud.authserver.dal.CommonResponse;
 import com.ruomm.springcloud.authserver.dal.request.UserCreateReq;
 import com.ruomm.springcloud.authserver.dal.response.UserCreateResp;
+import com.ruomm.springcloud.authserver.service.MessageService;
 import com.ruomm.springcloud.authserver.service.UserManagerService;
+import com.ruomm.springcloud.authserver.utils.AppUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,10 +28,16 @@ public class UserController {
 
     @Autowired
     private UserManagerService userManagerService;
+    @Autowired
+    private MessageService messageService;
 
     @PostMapping(value = "create")
-    public CommonResponse<UserCreateResp> createUser(@Valid @RequestBody UserCreateReq req) {
-
+    public CommonResponse<UserCreateResp> createUser(HttpServletRequest httpServletRequest, @Valid @RequestBody UserCreateReq req) {
+        String clientIp = IPUtils.getRequestIP(httpServletRequest);
+        if (StringUtils.isEmpty(clientIp) || clientIp.equalsIgnoreCase("unknown")) {
+            return AppUtils.toNackCore("获取客户端信息错误");
+        }
+        messageService.valid("user_register","mobile",req.getBindPhone(),null,req.getVerifyCode(),null,clientIp,null);
         return userManagerService.createUser(req);
     }
 }

@@ -1,6 +1,8 @@
 package com.ruomm.springcloud.authserver.dal.request;
 
-import jakarta.validation.constraints.NotNull;
+import com.ruomm.springcloud.authserver.config.AppConfig;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 
@@ -12,14 +14,19 @@ import org.hibernate.validator.constraints.Length;
  */
 @Data
 public class UserCreateReq {
-    @NotNull(message = "用户名必须填写，且必须为4-16位")
+    @NotEmpty(message = "用户名必须填写，且必须为4-16位")
     @Length(min = 4,max = 16,message = "用户名必须填写，且必须为4-16位")
     private String userName;
-    private String bindPhone;
-    @NotNull(message = "昵称必须填写，且必须为2-32位")
+    @NotEmpty(message = "昵称必须填写，且必须为2-32位")
     @Length(min = 2,max = 32,message = "昵称必须填写，且必须为2-32位")
     private String nickName;
-    @NotNull(message = "密码必须填写，且必须为8-32位")
+    @NotEmpty(message = "密码必须填写，且必须为8-32位")
     @Length(min = 8,max = 32,message = "密码必须填写，且必须为8-32位")
     private String password;
+    @NotEmpty(message = "绑定手机号必须填写")
+    @Pattern(regexp = AppConfig.REGEX_MOBILE,message = "绑定手机号格式不正确")
+    private String bindPhone;
+    @NotEmpty(message = "验证码必须填写")
+    @Length(min = 4,max = 8,message = "验证码格式不正确")
+    private String verifyCode;
 }

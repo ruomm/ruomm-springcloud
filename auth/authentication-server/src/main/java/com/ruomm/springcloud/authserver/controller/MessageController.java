@@ -24,8 +24,8 @@ public class MessageController {
     MessageService messageService;
 
     @PostMapping(value = "/send/{tpl_key}")
-    public CommonResponse send(HttpServletRequest httpRequest, @PathVariable String tpl_key, @Valid @RequestBody MessageSendReq req) {
-        String clientIp = IPUtils.getRequestIP(httpRequest);
+    public CommonResponse send(HttpServletRequest httpServletRequest, @PathVariable String tpl_key, @Valid @RequestBody MessageSendReq req) {
+        String clientIp = IPUtils.getRequestIP(httpServletRequest);
         if (StringUtils.isEmpty(clientIp) || clientIp.equalsIgnoreCase("unknown")) {
             return AppUtils.toNackCore("获取客户端信息错误");
         }

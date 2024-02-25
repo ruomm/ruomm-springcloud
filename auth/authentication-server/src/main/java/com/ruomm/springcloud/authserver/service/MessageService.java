@@ -26,6 +26,7 @@ import tk.mybatis.mapper.entity.Example;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author 牛牛-研发部-www.ruomm.com
@@ -69,10 +70,10 @@ public class MessageService {
         } catch (ParseException e) {
             throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s发送失败,查询日期转换错误", msgTemplate.getTplName()));
         }
-        verifyLimitByMsgAddr(msgTemplate,req,dateToday);
-        verifyLimitByClientInfo(msgTemplate,req,dateToday);
-        verifyLimitByUserId(msgTemplate, userEntity,dateToday);
-        verifyRepeatSkipTime(msgTemplate,req);
+        verifyLimitByMsgAddr(msgTemplate, req, dateToday);
+        verifyLimitByClientInfo(msgTemplate, req, dateToday);
+        verifyLimitByUserId(msgTemplate, userEntity, dateToday);
+        verifyRepeatSkipTime(msgTemplate, req);
         //  获取真正需要发送的信息内容
         MsgContentByTemplate msgContentByTemplate = parseMsgContentByTemplate(msgTemplate, userEntity, req);
         // 开始发送短信
@@ -88,6 +89,7 @@ public class MessageService {
         msgContentEntity.setMsgContent(msgContentByTemplate.getContent());
         msgContentEntity.setVerifyCode(msgContentByTemplate.getVerifyCode());
         msgContentEntity.setValidTime(msgContentByTemplate.getValidTime());
+        msgContentEntity.setCheckCount(0);
         msgContentEntity.setStatus(1);
         msgContentEntity.setClientIp(req.getClientIp());
         msgContentEntity.setVersion(1);
@@ -100,6 +102,88 @@ public class MessageService {
         }
         log.info("消息发送成功，消息内容为：" + msgContentEntity.getMsgContent());
         return AppUtils.toAck();
+    }
+
+    public boolean valid(String tpl_key, String msgType, String msgAddr, Long userId, String verifyCode,String clientId, String clientIp, String clientHost) {
+
+        // 获取消息模板
+        MsgTemplateEntity msgTemplate = queryMsgTemplateEntityForValid(tpl_key);
+        String tpl_name = msgTemplate.getTplName();
+        String msgTypeReal = StringUtils.isEmpty(msgType) ? "mobile" : msgType;
+        // 验证码发送地址和用户ID必须有一个
+        if (StringUtils.isEmpty(msgAddr) && (null == userId || userId.longValue()<=0)){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证失败，验证参数错误",tpl_name));
+        }
+        // 依据模板查找短信条数
+        Example exampleForMsg = new Example(MsgContentEntity.class);
+        Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();
+        criteriaForMsg.andEqualTo("tplKey", tpl_key);
+        criteriaForMsg.andEqualTo("status", 1);
+        criteriaForMsg.andEqualTo("msgType", msgTypeReal);
+        if (!StringUtils.isEmpty(msgAddr)) {
+            criteriaForMsg.andEqualTo("msgAddr", msgAddr);
+        }
+        if (null != userId && userId.longValue() > 0) {
+            criteriaForMsg.andEqualTo("userId", userId);
+        }
+        if (!StringUtils.isEmpty(clientId)) {
+            criteriaForMsg.andEqualTo("clientId", clientId);
+        }
+        if (!StringUtils.isEmpty(clientHost)) {
+            criteriaForMsg.andEqualTo("clientHost", clientHost);
+        }
+        if (!StringUtils.isEmpty(clientIp)) {
+            criteriaForMsg.andEqualTo("clientIp", clientIp);
+        }
+        Date dateNow = new Date();
+        Date dateQuery = new Date(dateNow.getTime() - 1000l * 3600);
+        criteriaForMsg.andGreaterThanOrEqualTo("createdAt", dateQuery);
+        exampleForMsg.setOrderByClause("created_at desc");
+        List<MsgContentEntity> listMsgContent = msgContentMapper.selectByExample(exampleForMsg);
+
+        MsgContentEntity contentEntity = ListUtils.isEmpty(listMsgContent) ? null : listMsgContent.get(0);
+        if (null == contentEntity || StringUtils.isEmpty(contentEntity.getVerifyCode())) {
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证码还没有发送",tpl_name));
+        }
+        if (null == contentEntity.getValidTime() || contentEntity.getValidTime().intValue()<=0){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证码已过期",tpl_name));
+        }
+        // 判断验证码是否过期
+        long validStart = contentEntity.getCreatedAt().getTime();
+        long validEnd = contentEntity.getCreatedAt().getTime()+contentEntity.getValidTime().intValue()*1000l;
+        long validNow = dateNow.getTime();
+        if (validNow<validStart || validNow>validEnd){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证码已过期",tpl_name));
+        }
+        if(contentEntity.getStatus().intValue() != 1){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证码已使用", tpl_name));
+        }
+        if (contentEntity.getCheckCount().intValue()>=AppConfig.VERIFY_CODE_CHECK_COUNT){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证码已过期", tpl_name));
+        }
+        boolean verifyCodePass =false;
+        int checkCount = contentEntity.getCheckCount().intValue()+1;
+        MsgContentEntity contentEntityUpdate = new MsgContentEntity();
+        contentEntityUpdate.setId(contentEntity.getId());
+        contentEntityUpdate.setCheckCount(checkCount);
+        contentEntityUpdate.setVersion(contentEntity.getVersion());
+        // 判断验证码是否正确
+        if (!contentEntity.getVerifyCode().equalsIgnoreCase(verifyCode)){
+            if (checkCount >=AppConfig.VERIFY_CODE_CHECK_COUNT){
+                contentEntityUpdate.setStatus(3);
+            }
+        } else {
+            verifyCodePass = true;
+            contentEntityUpdate.setStatus(2);
+        }
+        int dbUpdate = msgContentMapper.updateByPrimaryKeySelective(contentEntityUpdate);
+        if (dbUpdate!=1){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证失败，数据处理错误", tpl_name));
+        }
+        if (!verifyCodePass){
+            throw new WebAppException(AppUtils.ERROR_CORE, String.format("%s验证码不正确", tpl_name));
+        }
+        return true;
     }
 
     /**
@@ -124,6 +208,32 @@ public class MessageService {
 
         if (null == resultObj.getAuthType()) {
             throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板授权类型为空，信息无法发送");
+        }
+        return resultObj;
+    }
+
+    /**
+     * 查找短信模块
+     *
+     * @param tpl_key 短信模板key
+     * @return 短信模块
+     */
+    private MsgTemplateEntity queryMsgTemplateEntityForValid(String tpl_key) {
+        MsgTemplateEntity queryObj = new MsgTemplateEntity();
+        queryObj.setTplKey(tpl_key);
+        MsgTemplateEntity resultObj = msgTemplateMapper.selectByPrimaryKey(queryObj);
+        if (null == resultObj) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板不存在，无法验证");
+        }
+        if (null == resultObj.getStatus() || resultObj.getStatus() != Template_Status_Ok) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板已停用，无法验证");
+        }
+        if (StringUtils.isEmpty(resultObj.getTemplate())) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板无内容，无法验证");
+        }
+
+        if (null == resultObj.getAuthType()) {
+            throw new WebAppException(AppUtils.ERROR_DB_CORE, "消息模板授权类型为空，无法验证");
         }
         return resultObj;
     }
@@ -317,7 +427,7 @@ public class MessageService {
     }
 
     // 验证短信发送限制-同一发送目标
-    private boolean verifyLimitByMsgAddr(MsgTemplateEntity msgTemplate, MessageSendReq req,Date dateToday) {
+    private boolean verifyLimitByMsgAddr(MsgTemplateEntity msgTemplate, MessageSendReq req, Date dateToday) {
         String tplName = msgTemplate.getTplName();
         if (null != msgTemplate.getLimitByAddr() && msgTemplate.getLimitByAddr().intValue() > 0) {
             // 依据模板查找短信条数
@@ -351,7 +461,7 @@ public class MessageService {
     }
 
     // 验证短信发送限制-同一用户
-    private boolean verifyLimitByUserId(MsgTemplateEntity msgTemplate, UserEntity userEntity,Date dateToday) {
+    private boolean verifyLimitByUserId(MsgTemplateEntity msgTemplate, UserEntity userEntity, Date dateToday) {
         if (null == userEntity) {
             // 跳过用户验证
             return true;
@@ -389,7 +499,7 @@ public class MessageService {
     }
 
     // 验证短信发送限制-同一客户端
-    private boolean verifyLimitByClientInfo(MsgTemplateEntity msgTemplate, MessageSendReq req,Date dateToday) {
+    private boolean verifyLimitByClientInfo(MsgTemplateEntity msgTemplate, MessageSendReq req, Date dateToday) {
         String tplName = msgTemplate.getTplName();
         if (null != msgTemplate.getLimitByTerm() && msgTemplate.getLimitByTerm().intValue() > 0) {
             // 依据模板查找短信条数
@@ -427,7 +537,7 @@ public class MessageService {
         String tplName = msgTemplate.getTplName();
         Date dateNow = new Date();
         if (null != msgTemplate.getRepeatSkipTime() && msgTemplate.getRepeatSkipTime().intValue() > 0) {
-            Date dateQuery = new Date(dateNow.getTime()-msgTemplate.getRepeatSkipTime().intValue()*1000l);
+            Date dateQuery = new Date(dateNow.getTime() - msgTemplate.getRepeatSkipTime().intValue() * 1000l);
             // 依据模板查找短信条数
             Example exampleForMsg = new Example(MsgContentEntity.class);
             Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();
@@ -442,7 +552,7 @@ public class MessageService {
             }
         }
         if (configProperties.getVerifyCodeConfig().getRepeatSkipTime() > 0) {
-            Date dateQuery = new Date(dateNow.getTime()-configProperties.getVerifyCodeConfig().getRepeatSkipTime()*1000l);
+            Date dateQuery = new Date(dateNow.getTime() - configProperties.getVerifyCodeConfig().getRepeatSkipTime() * 1000l);
             // 依据模板查找短信条数
             Example exampleForMsg = new Example(MsgContentEntity.class);
             Example.Criteria criteriaForMsg = exampleForMsg.createCriteria();

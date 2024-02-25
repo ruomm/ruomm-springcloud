@@ -11,7 +11,7 @@ import java.text.SimpleDateFormat;
  * @create 2024/2/1 0:14
  */
 public class AppConfig {
-    public final static TokenHelper TOKEN_HELPER = new TokenHelper(TokenHelper.TOKEN_NUMBER+TokenHelper.TOKEN_LETTER_LOWER_CASE,16);
+    public final static TokenHelper TOKEN_HELPER = new TokenHelper(TokenHelper.TOKEN_NUMBER + TokenHelper.TOKEN_LETTER_LOWER_CASE, 16);
     public final static String PASSWORD_SLAT_FE = "xiaoniu@ruomm.com";
     public final static String PASSWORD_SLAT_BE = "niuniu@ruomm.com";
 
@@ -20,8 +20,9 @@ public class AppConfig {
     public final static SimpleDateFormat DATE_PATTERN_SECOND_NOSPACE = new SimpleDateFormat("yyyyMMddHHmmss");
     public final static SimpleDateFormat DATE_PATTERN_MILLI_SECOND = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     public final static SimpleDateFormat DATE_PATTERN_MILLI_SECOND_NOSPACE = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-    public final static TokenHelper TOKEN_HELPER_MSG = new TokenHelper(TokenHelper.TOKEN_NUMBER,6);
+    public final static TokenHelper TOKEN_HELPER_MSG = new TokenHelper(TokenHelper.TOKEN_NUMBER, 6);
     public final static int DB_STATUS_OK = 1;
+    public final static int VERIFY_CODE_CHECK_COUNT = 3;
 
     // 邮箱地址
     public final static String REGEX_PHONE = "(^((1)\\d{10})$|^((\\d{7,8})|(\\d{4}|\\d{3})-(\\d{7,8})|(\\d{4}|\\d{3})-(\\d{7,8})-(\\d{4}|\\d{3}|\\d{2}|\\d{1})|(\\d{7,8})-(\\d{4}|\\d{3}|\\d{2}|\\d{1}))$)";

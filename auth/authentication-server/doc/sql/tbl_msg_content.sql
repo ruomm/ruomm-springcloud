@@ -31,6 +31,7 @@ CREATE TABLE `tbl_msg_content` (
   `msg_content` varchar(1024) NOT NULL COMMENT '信息内容',
   `verify_code` varchar(16) NULL DEFAULT NULL COMMENT '验证码',
   `valid_time` int(0) NULL DEFAULT NULL COMMENT '验证码有效期(单位秒)',
+  `check_count` int(0) NOT NULL COMMENT '验证码已核验次数，超过一定核验次数验证码失效',
   `status` int(0) NOT NULL COMMENT '状态。1.发送成功；2.验证成功；3.验证失败；9.失效',
   `client_id` varchar(64) NULL DEFAULT NULL COMMENT '客户端编号',
   `client_host` varchar(64) NULL DEFAULT NULL COMMENT '客户端host地址',

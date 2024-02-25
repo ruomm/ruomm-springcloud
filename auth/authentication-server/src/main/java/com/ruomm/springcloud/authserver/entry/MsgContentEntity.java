@@ -3,6 +3,7 @@ package com.ruomm.springcloud.authserver.entry;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import tk.mybatis.mapper.annotation.Version;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,9 +16,9 @@ import java.util.Date;
  * tableRemarks：信息内容表
  * @copyright wanruome-2024
  * @author wanruome
- * @create 2024-02-24 09:01
+ * @create 2024-02-24 10:36
  *
- * @mbg.generated do_not_delete_during_merge 2024-02-24 09:01:15
+ * @mbg.generated do_not_delete_during_merge 2024-02-24 10:36:19
  */
 @Entity
 @Getter
@@ -97,6 +98,13 @@ public class MsgContentEntity {
     private Integer validTime;
 
     /**
+     * column: tbl_msg_content.check_count, datatype: INTEGER, length: 10, nullable: false
+     * remark: 验证码已核验次数，超过一定核验次数验证码失效
+     */
+    @Column( name = "check_count" )
+    private Integer checkCount;
+
+    /**
      * column: tbl_msg_content.status, datatype: INTEGER, length: 10, nullable: false
      * remark: 状态。1.发送成功；2.验证成功；3.验证失败；9.失效
      */
@@ -128,6 +136,7 @@ public class MsgContentEntity {
      * column: tbl_msg_content.version, datatype: INTEGER, length: 10, nullable: false
      * remark: 乐观锁
      */
+    @Version
     @Column( name = "version" )
     private Integer version;
 
